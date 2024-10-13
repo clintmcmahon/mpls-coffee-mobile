@@ -17,7 +17,8 @@ import { Feather } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
-
+import LoadingIndicator from "../components/LoadingIndicator";
+import { ActivityIndicator } from "react-native";
 const { width, height } = Dimensions.get("window");
 
 const MINNEAPOLIS_REGION = {
@@ -33,7 +34,7 @@ const MainScreen = ({ navigation }) => {
   const [region, setRegion] = useState(null);
   const [selectedShop, setSelectedShop] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [coffeeShops, setCoffeeShops] = useState([]);
+  const [coffeeShops, setCoffeeShops] = useState(null);
   const [filteredShops, setFilteredShops] = useState([]);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
   const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
@@ -150,41 +151,45 @@ const MainScreen = ({ navigation }) => {
   };
 
   const filterOpenShops = () => {
-    if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
-      setFilteredShops(coffeeShops);
-      return;
-    }
+    if (coffeeShops) {
+      if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
+        setFilteredShops(coffeeShops);
+        return;
+      }
 
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    let openShops = coffeeShops;
+      let openShops = coffeeShops;
 
-    if (isOpenNowEnabled) {
-      openShops = coffeeShops.filter((shop) => {
-        const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-        if (!todayHours) return false;
+      if (isOpenNowEnabled) {
+        openShops = coffeeShops.filter((shop) => {
+          const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
+          if (!todayHours) return false;
 
-        const openMinutes = parseISODuration(todayHours.openTime);
-        const closeMinutes = parseISODuration(todayHours.closeTime);
+          const openMinutes = parseISODuration(todayHours.openTime);
+          const closeMinutes = parseISODuration(todayHours.closeTime);
 
-        // Handle cases where closing time is on the next day
-        if (closeMinutes < openMinutes) {
+          // Handle cases where closing time is on the next day
+          if (closeMinutes < openMinutes) {
+            return (
+              currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+            );
+          }
+
           return (
-            currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+            currentMinutes >= openMinutes && currentMinutes <= closeMinutes
           );
-        }
+        });
+      }
 
-        return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
-      });
+      if (isGoodCoffeeEnabled) {
+        openShops = openShops.filter((shop) => shop.isGood);
+      }
+
+      setFilteredShops(openShops);
     }
-
-    if (isGoodCoffeeEnabled) {
-      openShops = openShops.filter((shop) => shop.isGood);
-    }
-
-    setFilteredShops(openShops);
   };
 
   const handleMarkerPress = (shop) => {
@@ -233,7 +238,6 @@ const MainScreen = ({ navigation }) => {
     const currentDay = new Date().getDay();
     const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
     if (todayHours) {
-      console.log(todayHours);
       const openTime = formatTime(todayHours.openTime);
       const closeTime = formatTime(todayHours.closeTime);
 
@@ -249,8 +253,7 @@ const MainScreen = ({ navigation }) => {
     const ampm = hours >= 12 ? "PM" : "AM";
 
     hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    console.log(hours);
+    hours = hours ? hours : 12;
     return `${hours}:${mins.toString().padStart(2, "0")} ${ampm}`;
   };
 
@@ -308,6 +311,9 @@ const MainScreen = ({ navigation }) => {
     );
   };
 
+  if (!coffeeShops) {
+    return <LoadingIndicator />;
+  }
   return (
     <View style={styles.container}>
       <MapView
@@ -319,7 +325,7 @@ const MainScreen = ({ navigation }) => {
         showsCompass={true}
         showsScale={true}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        customMapStyle={Platform.OS === "android" ? androidMapStyle : null}
+        customMapStyle={Platform.OS === "android" ? androidMapStyle : mapStyle} // Adjusted for iOS and Android
       >
         {filteredShops.map((shop) => (
           <Marker
@@ -327,7 +333,10 @@ const MainScreen = ({ navigation }) => {
             coordinate={{ latitude: shop.latitude, longitude: shop.longitude }}
             onPress={() => handleMarkerPress(shop)}
           >
-            <FontAwesome name="coffee" size={24} color="#1E3237" />
+            <View style={styles.markerContainer}>
+              <FontAwesome name="coffee" size={24} color="#1E3237" />
+              <Text style={styles.shopLabel}>{shop.name}</Text>
+            </View>
           </Marker>
         ))}
         {renderUserLocationMarker()}
@@ -635,12 +644,16 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   controlButton: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#4EBAAA",
+    backgroundColor: "#1E3237",
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   controlButtonText: {
     fontSize: 24,
@@ -673,6 +686,26 @@ const styles = StyleSheet.create({
   },
   closed: {
     color: "#F0B23F",
+  },
+  markerContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  shopLabel: {
+    marginLeft: 6,
+    fontSize: 10,
+    fontWeight: "400",
+    color: "#1E3237",
+    maxWidth: 150,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
 });
 
