@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "MPLS Coffee",
+    "displayName": "MPLS Coffee",
     "slug": "MPLSCoffee",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -23,9 +24,7 @@
       "buildNumber": "3",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "maps"
-        ]
+        "LSApplicationQueriesSchemes": ["maps"]
       },
       "bundleIdentifier": "com.parkasoftware.mplscoffee"
     },
