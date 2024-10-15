@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   View,
   StyleSheet,
@@ -18,7 +18,9 @@ import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
 import LoadingIndicator from "../components/LoadingIndicator";
-import { ActivityIndicator } from "react-native";
+import CoffeeShopsContext from "../context/CoffeeShopsContext";
+import * as utils from "../utils/functions";
+
 const { width, height } = Dimensions.get("window");
 
 const MINNEAPOLIS_REGION = {
@@ -28,13 +30,10 @@ const MINNEAPOLIS_REGION = {
   longitudeDelta: 0.1,
 };
 
-const API_URL = "https://api.mplscoffee.com/odata/CoffeeShops?$expand=hours";
-
 const MainScreen = ({ navigation }) => {
   const [region, setRegion] = useState(null);
   const [selectedShop, setSelectedShop] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [coffeeShops, setCoffeeShops] = useState(null);
   const [filteredShops, setFilteredShops] = useState([]);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
   const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
@@ -43,6 +42,7 @@ const MainScreen = ({ navigation }) => {
 
   const mapRef = useRef(null);
   const pulseAnimation = useRef(new Animated.Value(0)).current;
+  const { coffeeShops, loading } = useContext(CoffeeShopsContext);
 
   useEffect(() => {
     const setupInitialLocation = async () => {
@@ -70,7 +70,6 @@ const MainScreen = ({ navigation }) => {
     };
 
     setupInitialLocation();
-    fetchCoffeeShops();
   }, []);
 
   useEffect(() => {
@@ -129,27 +128,6 @@ const MainScreen = ({ navigation }) => {
     ).start();
   };
 
-  const fetchCoffeeShops = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setCoffeeShops(data.value);
-    } catch (error) {
-      console.error("Error fetching coffee shops:", error);
-    }
-  };
-
-  const parseISODuration = (duration) => {
-    const matches = duration.match(/PT(\d+)H(?:(\d+)M)?/);
-
-    if (matches) {
-      const hours = parseInt(matches[1], 10);
-      const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
-      return hours * 60 + minutes;
-    }
-    return 0;
-  };
-
   const filterOpenShops = () => {
     if (coffeeShops) {
       if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
@@ -168,8 +146,8 @@ const MainScreen = ({ navigation }) => {
           const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
           if (!todayHours) return false;
 
-          const openMinutes = parseISODuration(todayHours.openTime);
-          const closeMinutes = parseISODuration(todayHours.closeTime);
+          const openMinutes = utils.parseISODuration(todayHours.openTime);
+          const closeMinutes = utils.parseISODuration(todayHours.closeTime);
 
           // Handle cases where closing time is on the next day
           if (closeMinutes < openMinutes) {
@@ -234,63 +212,6 @@ const MainScreen = ({ navigation }) => {
     Linking.openURL(url);
   };
 
-  const getCurrentDayHours = (shop) => {
-    const currentDay = new Date().getDay();
-    const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-    if (todayHours) {
-      const openTime = formatTime(todayHours.openTime);
-      const closeTime = formatTime(todayHours.closeTime);
-
-      return `${openTime} - ${closeTime}`;
-    }
-    return "Closed";
-  };
-
-  const formatTime = (isoDuration) => {
-    const minutes = parseISODuration(isoDuration);
-    let hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    const ampm = hours >= 12 ? "PM" : "AM";
-
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    return `${hours}:${mins.toString().padStart(2, "0")} ${ampm}`;
-  };
-
-  const isOpenNow = (shop) => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-    if (!todayHours) return false;
-
-    const openMinutes = parseISODuration(todayHours.openTime);
-    const closeMinutes = parseISODuration(todayHours.closeTime);
-
-    if (closeMinutes < openMinutes) {
-      // Open past midnight
-      return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
-    }
-
-    return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-  };
-
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 3959; // Radius of the earth in miles
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(deg2rad(lat1)) *
-        Math.cos(deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in miles
-    return distance;
-  };
-
   const renderUserLocationMarker = () => {
     if (!userLocation || locationPermission !== "granted") return null;
 
@@ -311,7 +232,7 @@ const MainScreen = ({ navigation }) => {
     );
   };
 
-  if (!coffeeShops) {
+  if (loading) {
     return <LoadingIndicator />;
   }
   return (
@@ -377,26 +298,6 @@ const MainScreen = ({ navigation }) => {
           <Text style={styles.controlButtonText}>-</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => navigation.navigate("Settings")}
-      >
-        <Feather name="settings" size={24} color="#F0B23F" />
-      </TouchableOpacity>
-      <View style={styles.bottomRightControls}>
-        <TouchableOpacity style={styles.zoomButton} onPress={zoomIn}>
-          <Text style={styles.zoomButtonText}>+</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.zoomButton} onPress={zoomOut}>
-          <Text style={styles.zoomButtonText}>-</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => navigation.navigate("Settings")}
-      >
-        <Feather name="settings" size={24} color="#F0B23F" />
-      </TouchableOpacity>
 
       <Modal
         animationType="slide"
@@ -425,15 +326,17 @@ const MainScreen = ({ navigation }) => {
                     </TouchableOpacity>
                   )}
                   <Text style={styles.hours}>
-                    Hours today: {getCurrentDayHours(selectedShop)}
+                    Hours today: {utils.getCurrentDayHours(selectedShop)}
                   </Text>
                   <Text
                     style={[
                       styles.openStatus,
-                      isOpenNow(selectedShop) ? styles.open : styles.closed,
+                      utils.isOpenNow(selectedShop)
+                        ? styles.open
+                        : styles.closed,
                     ]}
                   >
-                    {isOpenNow(selectedShop) ? "Open Now" : "Closed"}
+                    {utils.isOpenNow(selectedShop) ? "Open Now" : "Closed"}
                   </Text>
                   <View style={styles.ratingContainer}>
                     <View style={styles.starContainer}>

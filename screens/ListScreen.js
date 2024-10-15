@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -13,18 +13,18 @@ import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { BlurView } from "expo-blur";
 import LoadingIndicator from "../components/LoadingIndicator";
+import CoffeeShopsContext from "../context/CoffeeShopsContext";
 
 const API_URL = "https://api.mplscoffee.com/odata/CoffeeShops?$expand=hours";
 
 const ListScreen = () => {
-  const [coffeeShops, setCoffeeShops] = useState(null);
   const [filteredShops, setFilteredShops] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
   const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
+  const { coffeeShops, loading } = useContext(CoffeeShopsContext);
 
   useEffect(() => {
-    fetchCoffeeShops();
     getUserLocation();
   }, []);
 
@@ -33,16 +33,6 @@ const ListScreen = () => {
       filterShops();
     }
   }, [isOpenNowEnabled, coffeeShops, userLocation, isGoodCoffeeEnabled]);
-
-  const fetchCoffeeShops = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setCoffeeShops(data.value);
-    } catch (error) {
-      console.error("Error fetching coffee shops:", error);
-    }
-  };
 
   const getUserLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
