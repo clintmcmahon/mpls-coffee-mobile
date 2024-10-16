@@ -12,7 +12,8 @@ import {
   Switch,
   Animated,
 } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView from "react-native-map-clustering";
+import { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BlurView } from "expo-blur";
@@ -20,6 +21,7 @@ import * as Location from "expo-location";
 import LoadingIndicator from "../components/LoadingIndicator";
 import CoffeeShopsContext from "../context/CoffeeShopsContext";
 import * as utils from "../utils/functions";
+import ShopHours from "../components/ShopHours";
 
 const { width, height } = Dimensions.get("window");
 
@@ -247,6 +249,7 @@ const MainScreen = ({ navigation }) => {
         showsScale={true}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
         customMapStyle={Platform.OS === "android" ? androidMapStyle : mapStyle} // Adjusted for iOS and Android
+        clusterColor="#1E3237"
       >
         {filteredShops.map((shop) => (
           <Marker
@@ -317,17 +320,6 @@ const MainScreen = ({ navigation }) => {
               {selectedShop && (
                 <>
                   <Text style={styles.modalTitle}>{selectedShop.name}</Text>
-                  <Text style={styles.address}>{selectedShop.address}</Text>
-                  {selectedShop.website && (
-                    <TouchableOpacity
-                      onPress={() => Linking.openURL(selectedShop.website)}
-                    >
-                      <Text style={styles.website}>Website</Text>
-                    </TouchableOpacity>
-                  )}
-                  <Text style={styles.hours}>
-                    Hours today: {utils.getCurrentDayHours(selectedShop)}
-                  </Text>
                   <Text
                     style={[
                       styles.openStatus,
@@ -338,6 +330,15 @@ const MainScreen = ({ navigation }) => {
                   >
                     {utils.isOpenNow(selectedShop) ? "Open Now" : "Closed"}
                   </Text>
+                  <Text style={styles.address}>{selectedShop.address}</Text>
+                  {selectedShop.website && (
+                    <TouchableOpacity
+                      onPress={() => Linking.openURL(selectedShop.website)}
+                    >
+                      <Text style={styles.website}>Website</Text>
+                    </TouchableOpacity>
+                  )}
+
                   <View style={styles.ratingContainer}>
                     <View style={styles.starContainer}>
                       <Feather name="star" size={20} color="#F0B23F" />
@@ -349,12 +350,7 @@ const MainScreen = ({ navigation }) => {
                       ({selectedShop.userRatingsTotal} ratings)
                     </Text>
                   </View>
-                  <Text style={styles.sectionTitle}>Open Hours</Text>
-                  {selectedShop.weekdayText.split("|").map((day, index) => (
-                    <Text key={index} style={styles.hoursText}>
-                      {day}
-                    </Text>
-                  ))}
+                  <ShopHours selectedShop={selectedShop} />
                   <TouchableOpacity
                     style={styles.directionsButton}
                     onPress={() => openDirections(selectedShop)}
@@ -574,13 +570,9 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     marginBottom: 8,
   },
-  hours: {
-    fontSize: 14,
-    color: "#4EBAAA",
-    marginBottom: 4,
-  },
+
   openStatus: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 8,
   },
