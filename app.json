@@ -21,10 +21,12 @@
       ]
     ],
     "ios": {
-      "buildNumber": "3",
+      "buildNumber": "4",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["maps"]
+        "LSApplicationQueriesSchemes": [
+          "maps"
+        ]
       },
       "bundleIdentifier": "com.parkasoftware.mplscoffee"
     },
