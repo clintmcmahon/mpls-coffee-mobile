@@ -9,7 +9,7 @@ import MainScreen from "./screens/MainScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import AboutScreen from "./screens/AboutScreen";
 import ListScreen from "./screens/ListScreen";
-
+import { CoffeeShopsProvider } from "./context/CoffeeShopsContext";
 const Drawer = createDrawerNavigator();
 const Stack = createStackNavigator();
 
@@ -69,34 +69,36 @@ const MainStack = () => (
 
 const App = () => {
   return (
-    <NavigationContainer>
-      <Drawer.Navigator
-        drawerContent={(props) => <CustomDrawerContent {...props} />}
-        screenOptions={{
-          drawerStyle: {
-            backgroundColor: "#1E3237",
-            width: 240,
-          },
-          drawerLabelStyle: {
-            color: "#F0B23F",
-          },
-          headerStyle: {
-            backgroundColor: "#1E3237",
-          },
-          headerTintColor: "#F0B23F",
-        }}
-      >
-        <Drawer.Screen
-          name="Home"
-          component={MainStack}
-          options={{ headerShown: false }}
-        />
-        <Drawer.Screen name="List" component={ListScreen} />
+    <CoffeeShopsProvider>
+      <NavigationContainer>
+        <Drawer.Navigator
+          drawerContent={(props) => <CustomDrawerContent {...props} />}
+          screenOptions={{
+            drawerStyle: {
+              backgroundColor: "#1E3237",
+              width: 240,
+            },
+            drawerLabelStyle: {
+              color: "#F0B23F",
+            },
+            headerStyle: {
+              backgroundColor: "#1E3237",
+            },
+            headerTintColor: "#F0B23F",
+          }}
+        >
+          <Drawer.Screen
+            name="Home"
+            component={MainStack}
+            options={{ headerShown: false }}
+          />
+          <Drawer.Screen name="List" component={ListScreen} />
 
-        <Drawer.Screen name="About" component={AboutScreen} />
-        <Drawer.Screen name="Settings" component={SettingsScreen} />
-      </Drawer.Navigator>
-    </NavigationContainer>
+          <Drawer.Screen name="About" component={AboutScreen} />
+          <Drawer.Screen name="Settings" component={SettingsScreen} />
+        </Drawer.Navigator>
+      </NavigationContainer>
+    </CoffeeShopsProvider>
   );
 };
 

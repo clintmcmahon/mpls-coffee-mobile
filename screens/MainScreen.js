@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   View,
   StyleSheet,
@@ -12,11 +12,16 @@ import {
   Switch,
   Animated,
 } from "react-native";
-import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView from "react-native-map-clustering";
+import { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BlurView } from "expo-blur";
 import * as Location from "expo-location";
+import LoadingIndicator from "../components/LoadingIndicator";
+import CoffeeShopsContext from "../context/CoffeeShopsContext";
+import * as utils from "../utils/functions";
+import ShopHours from "../components/ShopHours";
 
 const { width, height } = Dimensions.get("window");
 
@@ -27,13 +32,10 @@ const MINNEAPOLIS_REGION = {
   longitudeDelta: 0.1,
 };
 
-const API_URL = "https://api.mplscoffee.com/odata/CoffeeShops?$expand=hours";
-
 const MainScreen = ({ navigation }) => {
   const [region, setRegion] = useState(null);
   const [selectedShop, setSelectedShop] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [coffeeShops, setCoffeeShops] = useState([]);
   const [filteredShops, setFilteredShops] = useState([]);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
   const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
@@ -42,6 +44,7 @@ const MainScreen = ({ navigation }) => {
 
   const mapRef = useRef(null);
   const pulseAnimation = useRef(new Animated.Value(0)).current;
+  const { coffeeShops, loading } = useContext(CoffeeShopsContext);
 
   useEffect(() => {
     const setupInitialLocation = async () => {
@@ -69,7 +72,6 @@ const MainScreen = ({ navigation }) => {
     };
 
     setupInitialLocation();
-    fetchCoffeeShops();
   }, []);
 
   useEffect(() => {
@@ -128,63 +130,46 @@ const MainScreen = ({ navigation }) => {
     ).start();
   };
 
-  const fetchCoffeeShops = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setCoffeeShops(data.value);
-    } catch (error) {
-      console.error("Error fetching coffee shops:", error);
-    }
-  };
-
-  const parseISODuration = (duration) => {
-    const matches = duration.match(/PT(\d+)H(?:(\d+)M)?/);
-
-    if (matches) {
-      const hours = parseInt(matches[1], 10);
-      const minutes = matches[2] ? parseInt(matches[2], 10) : 0;
-      return hours * 60 + minutes;
-    }
-    return 0;
-  };
-
   const filterOpenShops = () => {
-    if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
-      setFilteredShops(coffeeShops);
-      return;
-    }
+    if (coffeeShops) {
+      if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
+        setFilteredShops(coffeeShops);
+        return;
+      }
 
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const now = new Date();
+      const currentDay = now.getDay();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
-    let openShops = coffeeShops;
+      let openShops = coffeeShops;
 
-    if (isOpenNowEnabled) {
-      openShops = coffeeShops.filter((shop) => {
-        const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-        if (!todayHours) return false;
+      if (isOpenNowEnabled) {
+        openShops = coffeeShops.filter((shop) => {
+          const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
+          if (!todayHours) return false;
 
-        const openMinutes = parseISODuration(todayHours.openTime);
-        const closeMinutes = parseISODuration(todayHours.closeTime);
+          const openMinutes = utils.parseISODuration(todayHours.openTime);
+          const closeMinutes = utils.parseISODuration(todayHours.closeTime);
 
-        // Handle cases where closing time is on the next day
-        if (closeMinutes < openMinutes) {
+          // Handle cases where closing time is on the next day
+          if (closeMinutes < openMinutes) {
+            return (
+              currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+            );
+          }
+
           return (
-            currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+            currentMinutes >= openMinutes && currentMinutes <= closeMinutes
           );
-        }
+        });
+      }
 
-        return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
-      });
+      if (isGoodCoffeeEnabled) {
+        openShops = openShops.filter((shop) => shop.isGood);
+      }
+
+      setFilteredShops(openShops);
     }
-
-    if (isGoodCoffeeEnabled) {
-      openShops = openShops.filter((shop) => shop.isGood);
-    }
-
-    setFilteredShops(openShops);
   };
 
   const handleMarkerPress = (shop) => {
@@ -229,65 +214,6 @@ const MainScreen = ({ navigation }) => {
     Linking.openURL(url);
   };
 
-  const getCurrentDayHours = (shop) => {
-    const currentDay = new Date().getDay();
-    const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-    if (todayHours) {
-      console.log(todayHours);
-      const openTime = formatTime(todayHours.openTime);
-      const closeTime = formatTime(todayHours.closeTime);
-
-      return `${openTime} - ${closeTime}`;
-    }
-    return "Closed";
-  };
-
-  const formatTime = (isoDuration) => {
-    const minutes = parseISODuration(isoDuration);
-    let hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    const ampm = hours >= 12 ? "PM" : "AM";
-
-    hours = hours % 12;
-    hours = hours ? hours : 12; // the hour '0' should be '12'
-    console.log(hours);
-    return `${hours}:${mins.toString().padStart(2, "0")} ${ampm}`;
-  };
-
-  const isOpenNow = (shop) => {
-    const now = new Date();
-    const currentDay = now.getDay();
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-    const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-    if (!todayHours) return false;
-
-    const openMinutes = parseISODuration(todayHours.openTime);
-    const closeMinutes = parseISODuration(todayHours.closeTime);
-
-    if (closeMinutes < openMinutes) {
-      // Open past midnight
-      return currentMinutes >= openMinutes || currentMinutes < closeMinutes;
-    }
-
-    return currentMinutes >= openMinutes && currentMinutes < closeMinutes;
-  };
-
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 3959; // Radius of the earth in miles
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(deg2rad(lat1)) *
-        Math.cos(deg2rad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in miles
-    return distance;
-  };
-
   const renderUserLocationMarker = () => {
     if (!userLocation || locationPermission !== "granted") return null;
 
@@ -308,6 +234,9 @@ const MainScreen = ({ navigation }) => {
     );
   };
 
+  if (loading) {
+    return <LoadingIndicator />;
+  }
   return (
     <View style={styles.container}>
       <MapView
@@ -319,7 +248,8 @@ const MainScreen = ({ navigation }) => {
         showsCompass={true}
         showsScale={true}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        customMapStyle={Platform.OS === "android" ? androidMapStyle : null}
+        customMapStyle={Platform.OS === "android" ? androidMapStyle : mapStyle} // Adjusted for iOS and Android
+        clusterColor="#1E3237"
       >
         {filteredShops.map((shop) => (
           <Marker
@@ -327,7 +257,10 @@ const MainScreen = ({ navigation }) => {
             coordinate={{ latitude: shop.latitude, longitude: shop.longitude }}
             onPress={() => handleMarkerPress(shop)}
           >
-            <FontAwesome name="coffee" size={24} color="#1E3237" />
+            <View style={styles.markerContainer}>
+              <FontAwesome name="coffee" size={24} color="#1E3237" />
+              <Text style={styles.shopLabel}>{shop.name}</Text>
+            </View>
           </Marker>
         ))}
         {renderUserLocationMarker()}
@@ -368,26 +301,6 @@ const MainScreen = ({ navigation }) => {
           <Text style={styles.controlButtonText}>-</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => navigation.navigate("Settings")}
-      >
-        <Feather name="settings" size={24} color="#F0B23F" />
-      </TouchableOpacity>
-      <View style={styles.bottomRightControls}>
-        <TouchableOpacity style={styles.zoomButton} onPress={zoomIn}>
-          <Text style={styles.zoomButtonText}>+</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.zoomButton} onPress={zoomOut}>
-          <Text style={styles.zoomButtonText}>-</Text>
-        </TouchableOpacity>
-      </View>
-      <TouchableOpacity
-        style={styles.settingsButton}
-        onPress={() => navigation.navigate("Settings")}
-      >
-        <Feather name="settings" size={24} color="#F0B23F" />
-      </TouchableOpacity>
 
       <Modal
         animationType="slide"
@@ -407,6 +320,16 @@ const MainScreen = ({ navigation }) => {
               {selectedShop && (
                 <>
                   <Text style={styles.modalTitle}>{selectedShop.name}</Text>
+                  <Text
+                    style={[
+                      styles.openStatus,
+                      utils.isOpenNow(selectedShop)
+                        ? styles.open
+                        : styles.closed,
+                    ]}
+                  >
+                    {utils.isOpenNow(selectedShop) ? "Open Now" : "Closed"}
+                  </Text>
                   <Text style={styles.address}>{selectedShop.address}</Text>
                   {selectedShop.website && (
                     <TouchableOpacity
@@ -415,17 +338,7 @@ const MainScreen = ({ navigation }) => {
                       <Text style={styles.website}>Website</Text>
                     </TouchableOpacity>
                   )}
-                  <Text style={styles.hours}>
-                    Hours today: {getCurrentDayHours(selectedShop)}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.openStatus,
-                      isOpenNow(selectedShop) ? styles.open : styles.closed,
-                    ]}
-                  >
-                    {isOpenNow(selectedShop) ? "Open Now" : "Closed"}
-                  </Text>
+
                   <View style={styles.ratingContainer}>
                     <View style={styles.starContainer}>
                       <Feather name="star" size={20} color="#F0B23F" />
@@ -437,12 +350,7 @@ const MainScreen = ({ navigation }) => {
                       ({selectedShop.userRatingsTotal} ratings)
                     </Text>
                   </View>
-                  <Text style={styles.sectionTitle}>Open Hours</Text>
-                  {selectedShop.weekdayText.split("|").map((day, index) => (
-                    <Text key={index} style={styles.hoursText}>
-                      {day}
-                    </Text>
-                  ))}
+                  <ShopHours selectedShop={selectedShop} />
                   <TouchableOpacity
                     style={styles.directionsButton}
                     onPress={() => openDirections(selectedShop)}
@@ -635,12 +543,16 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
   },
   controlButton: {
-    width: 40,
-    height: 40,
+    width: 50,
+    height: 50,
     justifyContent: "center",
     alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#4EBAAA",
+    backgroundColor: "#1E3237",
+    borderRadius: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   controlButtonText: {
     fontSize: 24,
@@ -658,13 +570,9 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     marginBottom: 8,
   },
-  hours: {
-    fontSize: 14,
-    color: "#4EBAAA",
-    marginBottom: 4,
-  },
+
   openStatus: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "bold",
     marginBottom: 8,
   },
@@ -673,6 +581,26 @@ const styles = StyleSheet.create({
   },
   closed: {
     color: "#F0B23F",
+  },
+  markerContainer: {
+    flexDirection: "column",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 3,
+  },
+  shopLabel: {
+    marginLeft: 6,
+    fontSize: 10,
+    fontWeight: "400",
+    color: "#1E3237",
+    maxWidth: 150,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
   },
 });
 

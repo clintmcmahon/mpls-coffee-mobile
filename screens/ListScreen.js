@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -12,36 +12,27 @@ import {
 import { Feather } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { BlurView } from "expo-blur";
+import LoadingIndicator from "../components/LoadingIndicator";
+import CoffeeShopsContext from "../context/CoffeeShopsContext";
 
 const API_URL = "https://api.mplscoffee.com/odata/CoffeeShops?$expand=hours";
 
 const ListScreen = () => {
-  const [coffeeShops, setCoffeeShops] = useState([]);
   const [filteredShops, setFilteredShops] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
   const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
+  const { coffeeShops, loading } = useContext(CoffeeShopsContext);
 
   useEffect(() => {
-    fetchCoffeeShops();
     getUserLocation();
   }, []);
 
   useEffect(() => {
-    if (coffeeShops.length > 0 && userLocation) {
+    if (coffeeShops && coffeeShops.length > 0 && userLocation) {
       filterShops();
     }
   }, [isOpenNowEnabled, coffeeShops, userLocation, isGoodCoffeeEnabled]);
-
-  const fetchCoffeeShops = async () => {
-    try {
-      const response = await fetch(API_URL);
-      const data = await response.json();
-      setCoffeeShops(data.value);
-    } catch (error) {
-      console.error("Error fetching coffee shops:", error);
-    }
-  };
 
   const getUserLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -93,26 +84,28 @@ const ListScreen = () => {
   };
 
   const filterShops = () => {
-    let filtered = coffeeShops.map((shop) => ({
-      ...shop,
-      distance: calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        shop.latitude,
-        shop.longitude
-      ),
-    }));
+    if (coffeeShops) {
+      let filtered = coffeeShops.map((shop) => ({
+        ...shop,
+        distance: calculateDistance(
+          userLocation.latitude,
+          userLocation.longitude,
+          shop.latitude,
+          shop.longitude
+        ),
+      }));
 
-    if (isOpenNowEnabled) {
-      filtered = filtered.filter((shop) => isOpenNow(shop));
+      if (isOpenNowEnabled) {
+        filtered = filtered.filter((shop) => isOpenNow(shop));
+      }
+
+      if (isGoodCoffeeEnabled) {
+        filtered = filtered.filter((shop) => shop.isGood);
+      }
+
+      filtered.sort((a, b) => a.distance - b.distance);
+      setFilteredShops(filtered);
     }
-
-    if (isGoodCoffeeEnabled) {
-      filtered = filtered.filter((shop) => shop.isGood);
-    }
-
-    filtered.sort((a, b) => a.distance - b.distance);
-    setFilteredShops(filtered);
   };
 
   const parseISODuration = (duration) => {
@@ -210,6 +203,9 @@ const ListScreen = () => {
       </View>
     </View>
   );
+  if (!coffeeShops) {
+    return <LoadingIndicator />;
+  }
 
   return (
     <View style={styles.container}>

@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "MPLS Coffee",
+    "displayName": "MPLS Coffee",
     "slug": "MPLSCoffee",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -9,7 +10,7 @@
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#1e3237"
     },
     "plugins": [
       [
@@ -20,13 +21,17 @@
       ]
     ],
     "ios": {
+      "buildNumber": "4",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["maps"]
+        "LSApplicationQueriesSchemes": [
+          "maps"
+        ]
       },
       "bundleIdentifier": "com.parkasoftware.mplscoffee"
     },
     "android": {
+      "versionCode": 2,
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -34,11 +39,16 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#1e3237"
       }
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "1e421fe7-060a-484a-89e5-bcf749dd8355"
+      }
     }
   }
 }
