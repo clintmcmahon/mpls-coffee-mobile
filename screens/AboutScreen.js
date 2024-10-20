@@ -19,12 +19,11 @@ const AboutScreen = () => {
       <View style={styles.content}>
         <Text style={styles.title}>About MPLS Coffee</Text>
 
-        <Text style={styles.sectionTitle}>What We Do</Text>
+        <Text style={styles.sectionTitle}>What Is This?</Text>
         <Text style={styles.text}>
-          MPLS Coffee is your ultimate guide to discovering and exploring the
-          vibrant coffee scene in Minneapolis. Our app helps coffee enthusiasts
-          and casual drinkers alike find the perfect cup of joe in the Twin
-          Cities.
+          MPLS Coffee is a guide to find the closest cup of coffee to your
+          location. The app helps people who want coffee find cups of joe in the
+          Twin Cities.
         </Text>
 
         <Text style={styles.sectionTitle}>Features</Text>
@@ -38,11 +37,12 @@ const AboutScreen = () => {
 
         <Text style={styles.sectionTitle}>Good Coffee Filter</Text>
         <Text style={styles.text}>
-          Our unique "Good Coffee" filter helps you find shops that truly care
-          about their craft. This feature highlights establishments known for
-          their high-quality beans, expert baristas, and commitment to the art
-          of coffee-making. Say goodbye to mediocre brews and hello to
-          exceptional coffee experiences!
+          We have a "Good Coffee" filter that helps you find shops that truly
+          care about making coffee that's good. This feature highlights
+          establishments known for their high-quality beans, expert baristas,
+          and commitment to the art of coffee-making. Say goodbye to mediocre
+          brews and hello to exceptional coffee experiences! Turn it off if you
+          just need some caffeine.
         </Text>
 
         <Text style={styles.sectionTitle}>Open Now Feature</Text>
@@ -67,7 +67,7 @@ const AboutScreen = () => {
           onPress={handleEmailPress}
         >
           <Feather name="mail" size={20} color="#1E3237" />
-          <Text style={styles.contactButtonText}>info@parkasoftware.com</Text>
+          <Text style={styles.contactButtonText}>hello@mplscoffee.com</Text>
         </TouchableOpacity>
         <Text style={styles.text}>
           We'd love to hear your feedback, suggestions, or any questions you

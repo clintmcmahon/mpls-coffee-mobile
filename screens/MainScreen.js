@@ -234,9 +234,10 @@ const MainScreen = ({ navigation }) => {
     );
   };
 
-  if (loading) {
+  if (loading || !region) {
     return <LoadingIndicator />;
   }
+
   return (
     <View style={styles.container}>
       <MapView

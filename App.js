@@ -2,19 +2,23 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createDrawerNavigator } from "@react-navigation/drawer";
 import { createStackNavigator } from "@react-navigation/stack";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Image } from "react-native";
 import { Feather } from "@expo/vector-icons";
 // Import your screen components here
-import MainScreen from "./screens/MainScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 import AboutScreen from "./screens/AboutScreen";
 import ListScreen from "./screens/ListScreen";
 import { CoffeeShopsProvider } from "./context/CoffeeShopsContext";
+import MainStack from "./components/Drawer/MainStack";
+
 const Drawer = createDrawerNavigator();
-const Stack = createStackNavigator();
 
 const CustomDrawerContent = ({ navigation }) => (
   <View style={styles.drawerContainer}>
+    <View style={styles.appHeader}>
+      <Image source={require("./assets/icon.png")} style={styles.appIcon} />
+      <Text style={styles.appName}>MPLS Coffee</Text>
+    </View>
     <TouchableOpacity
       style={styles.drawerItem}
       onPress={() => navigation.navigate("Home")}
@@ -42,31 +46,6 @@ const CustomDrawerContent = ({ navigation }) => (
   </View>
 );
 
-const MainStack = () => (
-  <Stack.Navigator
-    screenOptions={({ navigation }) => ({
-      headerLeft: () => (
-        <TouchableOpacity
-          onPress={() => navigation.openDrawer()}
-          style={{ marginLeft: 15 }}
-        >
-          <Feather name="menu" size={24} color="#F0B23F" />
-        </TouchableOpacity>
-      ),
-      headerStyle: {
-        backgroundColor: "#1E3237",
-      },
-      headerTintColor: "#F0B23F",
-    })}
-  >
-    <Stack.Screen
-      name="MainScreen"
-      component={MainScreen}
-      options={{ title: "MPLS Coffee" }}
-    />
-  </Stack.Navigator>
-);
-
 const App = () => {
   return (
     <CoffeeShopsProvider>
@@ -75,7 +54,7 @@ const App = () => {
           drawerContent={(props) => <CustomDrawerContent {...props} />}
           screenOptions={{
             drawerStyle: {
-              backgroundColor: "#1E3237",
+              backgroundColor: "#F0B23F",
               width: 240,
             },
             drawerLabelStyle: {
@@ -93,7 +72,6 @@ const App = () => {
             options={{ headerShown: false }}
           />
           <Drawer.Screen name="List" component={ListScreen} />
-
           <Drawer.Screen name="About" component={AboutScreen} />
           <Drawer.Screen name="Settings" component={SettingsScreen} />
         </Drawer.Navigator>
@@ -108,12 +86,31 @@ const styles = StyleSheet.create({
     paddingTop: 50,
     backgroundColor: "#1E3237",
   },
+  appHeader: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 40, // Space around the app icon and name
+    backgroundColor: "#1E3237", // Dark background for header (similar to Apple style)
+    borderBottomWidth: 1,
+    borderBottomColor: "#2C3E50", // Subtle border to separate from menu
+  },
+  appIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 20,
+    marginBottom: 10,
+  },
+  appName: {
+    color: "#F0B23F",
+    fontSize: 22,
+    fontWeight: "bold",
+  },
   drawerItem: {
     padding: 16,
   },
   drawerItemText: {
     color: "#F0B23F",
-    fontSize: 16,
+    fontSize: 20,
   },
 });
 
