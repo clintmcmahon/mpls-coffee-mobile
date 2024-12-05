@@ -12,27 +12,31 @@ const ShopHours = ({ selectedShop }) => {
     "Saturday",
   ];
   const currentDay = daysOfWeek[new Date().getDay()];
-  return (
-    <View>
-      <Text style={styles.sectionTitle}>Open Hours</Text>
-      {selectedShop.weekdayText.split("|").map((day, index) => {
-        // Extract the day name from the text (e.g., "Monday" from "Monday: 6:00 AM – 6:00 PM")
-        const dayName = day.split(":")[0];
+  if (selectedShop.weekdayDescriptions) {
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>Hours</Text>
+        {selectedShop.weekdayDescriptions.split("|").map((day, index) => {
+          // Extract the day name from the text (e.g., "Monday" from "Monday: 6:00 AM – 6:00 PM")
+          const dayName = day.split(":")[0];
 
-        // Determine if the current day matches to apply the highlight
-        const isToday = dayName.trim() === currentDay;
+          // Determine if the current day matches to apply the highlight
+          const isToday = dayName.trim() === currentDay;
 
-        return (
-          <Text
-            key={index}
-            style={[styles.hoursText, isToday && styles.highlight]}
-          >
-            {day}
-          </Text>
-        );
-      })}
-    </View>
-  );
+          return (
+            <Text
+              key={index}
+              style={[styles.hoursText, isToday && styles.highlight]}
+            >
+              {day.trim()}
+            </Text>
+          );
+        })}
+      </View>
+    );
+  } else {
+    return null;
+  }
 };
 
 const styles = StyleSheet.create({

@@ -11,8 +11,8 @@ import {
   ScrollView,
   Switch,
   Animated,
+  Image,
 } from "react-native";
-import MapView from "react-native-map-clustering";
 import { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
@@ -22,7 +22,8 @@ import LoadingIndicator from "../components/LoadingIndicator";
 import CoffeeShopsContext from "../context/CoffeeShopsContext";
 import * as utils from "../utils/functions";
 import ShopHours from "../components/ShopHours";
-
+import AISummary from "../components/AISummary";
+import MapView from "react-native-map-clustering";
 const { width, height } = Dimensions.get("window");
 
 const MINNEAPOLIS_REGION = {
@@ -38,7 +39,7 @@ const MainScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [filteredShops, setFilteredShops] = useState([]);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
-  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
+  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState("unknown");
 
@@ -147,7 +148,6 @@ const MainScreen = ({ navigation }) => {
         openShops = coffeeShops.filter((shop) => {
           const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
           if (!todayHours) return false;
-
           const openMinutes = utils.parseISODuration(todayHours.openTime);
           const closeMinutes = utils.parseISODuration(todayHours.closeTime);
 
@@ -249,7 +249,8 @@ const MainScreen = ({ navigation }) => {
         showsCompass={true}
         showsScale={true}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        customMapStyle={Platform.OS === "android" ? androidMapStyle : mapStyle} // Adjusted for iOS and Android
+        minZoom={5}
+        maxZoom={10}
         clusterColor="#1E3237"
       >
         {filteredShops.map((shop) => (
@@ -259,8 +260,16 @@ const MainScreen = ({ navigation }) => {
             onPress={() => handleMarkerPress(shop)}
           >
             <View style={styles.markerContainer}>
-              <FontAwesome name="coffee" size={24} color="#1E3237" />
-              <Text style={styles.shopLabel}>{shop.name}</Text>
+              <View style={styles.iconContainer}>
+                <FontAwesome name="coffee" size={18} color="#FFFFFF" />
+              </View>
+              <Text
+                style={styles.shopLabel}
+                numberOfLines={2} // Limit to one line
+                ellipsizeMode="tail" // Show ellipsis for overflow
+              >
+                {shop.name}
+              </Text>
             </View>
           </Marker>
         ))}
@@ -278,7 +287,7 @@ const MainScreen = ({ navigation }) => {
           />
         </BlurView>
         <BlurView intensity={80} tint="dark" style={styles.isGoodContainer}>
-          <Text style={styles.filterText}>Good Coffee</Text>
+          <Text style={styles.filterText}>Specialty Coffee</Text>
           <Switch
             trackColor={{ false: "#767577", true: "#4EBAAA" }}
             thumbColor={isGoodCoffeeEnabled ? "#F0B23F" : "#f4f3f4"}
@@ -320,38 +329,63 @@ const MainScreen = ({ navigation }) => {
             <ScrollView>
               {selectedShop && (
                 <>
-                  <Text style={styles.modalTitle}>{selectedShop.name}</Text>
-                  <Text
-                    style={[
-                      styles.openStatus,
-                      utils.isOpenNow(selectedShop)
-                        ? styles.open
-                        : styles.closed,
-                    ]}
-                  >
-                    {utils.isOpenNow(selectedShop) ? "Open Now" : "Closed"}
-                  </Text>
-                  <Text style={styles.address}>{selectedShop.address}</Text>
-                  {selectedShop.website && (
-                    <TouchableOpacity
-                      onPress={() => Linking.openURL(selectedShop.website)}
-                    >
-                      <Text style={styles.website}>Website</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <View style={styles.ratingContainer}>
-                    <View style={styles.starContainer}>
-                      <Feather name="star" size={20} color="#F0B23F" />
-                      <Text style={styles.ratingText}>
-                        {selectedShop.rating.toFixed(1)}
+                  <View style={styles.headerContainer}>
+                    <Text style={styles.modalTitle}>{selectedShop.name}</Text>
+                    <View style={styles.ratingContainer}>
+                      <View style={styles.starContainer}>
+                        <Feather name="star" size={14} color="#F0B23F" />
+                        <Text style={styles.ratingText}>
+                          {selectedShop.rating.toFixed(1)}
+                        </Text>
+                      </View>
+                      <Text style={styles.totalRatingsText}>
+                        ({selectedShop.userRatingsTotal})
                       </Text>
+                      <Text style={styles.separator}>•</Text>
+                      <Text
+                        style={[
+                          styles.openStatus,
+                          utils.isOpenNow(selectedShop)
+                            ? styles.open
+                            : styles.closed,
+                        ]}
+                      >
+                        {utils.isOpenNow(selectedShop) ? "Open Now" : "Closed"}
+                      </Text>
+
+                      {selectedShop.website && (
+                        <>
+                          <Text style={styles.separator}>•</Text>
+                          <TouchableOpacity
+                            onPress={() =>
+                              Linking.openURL(selectedShop.website)
+                            }
+                          >
+                            <Text style={styles.website}>Website</Text>
+                          </TouchableOpacity>
+                        </>
+                      )}
                     </View>
-                    <Text style={styles.totalRatingsText}>
-                      ({selectedShop.userRatingsTotal} ratings)
-                    </Text>
                   </View>
+
+                  <View style={styles.imageContainer}>
+                    <Image
+                      source={{ uri: selectedShop.imageUrl }}
+                      style={styles.shopImage}
+                    />
+                  </View>
+                  <AISummary
+                    overview={selectedShop.aiOverview}
+                    description={selectedShop.aiDescription}
+                  />
+
+                  <Text style={styles.sectionTitle}>Address</Text>
+                  <Text style={[{ paddingBottom: 10 }, styles.address]}>
+                    {selectedShop.address}
+                  </Text>
+
                   <ShopHours selectedShop={selectedShop} />
+
                   <TouchableOpacity
                     style={styles.directionsButton}
                     onPress={() => openDirections(selectedShop)}
@@ -413,10 +447,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E3237",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 20,
     paddingHorizontal: 20,
     paddingBottom: 40,
-    maxHeight: "80%",
+    maxHeight: "95%",
   },
   closeButton: {
     alignSelf: "flex-end",
@@ -444,7 +477,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   ratingText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "bold",
     color: "#F0B23F",
     marginLeft: 4,
@@ -453,12 +486,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4EBAAA",
   },
+  separator: {
+    marginLeft: 6,
+    marginRight: 6,
+    color: "#F0B23F",
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "bold",
     color: "#F0B23F",
     marginBottom: 12,
-    marginTop: 20,
   },
   hoursText: {
     fontSize: 16,
@@ -567,314 +604,44 @@ const styles = StyleSheet.create({
   },
   website: {
     fontSize: 16,
-    color: "#4EBAAA",
-    textDecorationLine: "underline",
-    marginBottom: 8,
+    color: "#F0B23F",
   },
 
   openStatus: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-  },
-  open: {
-    color: "#4EBAAA",
-  },
-  closed: {
     color: "#F0B23F",
   },
+
   markerContainer: {
-    flexDirection: "column",
-    alignItems: "center",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 1,
-    elevation: 3,
+    alignItems: "center", // Center icon and text
+    justifyContent: "center",
+  },
+  iconContainer: {
+    backgroundColor: "#1E3237", // Icon background color
+    borderRadius: 20, // Rounded container for the icon
+    padding: 10,
+    shadowColor: "#000", // Add subtle shadow for depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5, // Android shadow
   },
   shopLabel: {
-    marginLeft: 6,
+    marginTop: 6, // Space between the icon and text
     fontSize: 10,
-    fontWeight: "400",
-    color: "#1E3237",
-    maxWidth: 150,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    fontWeight: "600",
+    color: "#1E3237", // Main text color (dark green)
+    textAlign: "center",
+    maxWidth: 125, // Limit label width
+
+    // White Outline
+    textShadowColor: "#FFFFFF",
+    textShadowOffset: { width: -1, height: -1 }, // Top-left
+    textShadowRadius: 1,
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 1, height: 1 }, // Bottom-right
+    shadowOpacity: 0.7,
   },
 });
-
-const mapStyle = [
-  {
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#1E3237",
-      },
-    ],
-  },
-  {
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#F0B23F",
-      },
-    ],
-  },
-  {
-    elementType: "labels.text.stroke",
-    stylers: [
-      {
-        color: "#1E3237",
-      },
-    ],
-  },
-  {
-    featureType: "administrative",
-    elementType: "geometry.stroke",
-    stylers: [
-      {
-        color: "#4EBAAA",
-      },
-    ],
-  },
-  {
-    featureType: "administrative.land_parcel",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#64779e",
-      },
-    ],
-  },
-  {
-    featureType: "administrative.province",
-    elementType: "geometry.stroke",
-    stylers: [
-      {
-        color: "#4b6878",
-      },
-    ],
-  },
-  {
-    featureType: "landscape.man_made",
-    elementType: "geometry.stroke",
-    stylers: [
-      {
-        color: "#334e87",
-      },
-    ],
-  },
-  {
-    featureType: "landscape.natural",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#023e58",
-      },
-    ],
-  },
-  {
-    featureType: "poi",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#283d6a",
-      },
-    ],
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#6f9ba5",
-      },
-    ],
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.text.stroke",
-    stylers: [
-      {
-        color: "#1d2c4d",
-      },
-    ],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry.fill",
-    stylers: [
-      {
-        color: "#023e58",
-      },
-    ],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#3C7680",
-      },
-    ],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#304a57",
-      },
-    ],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#98a5be",
-      },
-    ],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text.stroke",
-    stylers: [
-      {
-        color: "#1d2c4d",
-      },
-    ],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#2c6675",
-      },
-    ],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry.stroke",
-    stylers: [
-      {
-        color: "#255763",
-      },
-    ],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#b0d5ce",
-      },
-    ],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "labels.text.stroke",
-    stylers: [
-      {
-        color: "#023e58",
-      },
-    ],
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#98a5be",
-      },
-    ],
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.text.stroke",
-    stylers: [
-      {
-        color: "#1d2c4d",
-      },
-    ],
-  },
-  {
-    featureType: "transit.line",
-    elementType: "geometry.fill",
-    stylers: [
-      {
-        color: "#283d6a",
-      },
-    ],
-  },
-  {
-    featureType: "transit.station",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#3a4762",
-      },
-    ],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [
-      {
-        color: "#0e1626",
-      },
-    ],
-  },
-  {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [
-      {
-        color: "#4e6d70",
-      },
-    ],
-  },
-];
-
-const androidMapStyle = [
-  {
-    featureType: "poi",
-    elementType: "labels",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "labels",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "road",
-    elementType: "labels.text",
-    stylers: [{ visibility: "simplified" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#ffffff" }],
-  },
-  {
-    featureType: "landscape",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#f1f1f1" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#e0e0e0" }],
-  },
-];
 
 export default MainScreen;

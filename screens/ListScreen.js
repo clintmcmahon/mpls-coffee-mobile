@@ -21,7 +21,7 @@ const ListScreen = () => {
   const [filteredShops, setFilteredShops] = useState([]);
   const [userLocation, setUserLocation] = useState(null);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
-  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
+  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(false);
   const { coffeeShops, loading } = useContext(CoffeeShopsContext);
 
   useEffect(() => {
@@ -220,7 +220,7 @@ const ListScreen = () => {
         />
       </BlurView>
       <BlurView intensity={80} tint="dark" style={styles.filterContainer}>
-        <Text style={styles.filterText}>Show Good Coffee</Text>
+        <Text style={styles.filterText}>Specialty Coffee</Text>
         <Switch
           trackColor={{ false: "#767577", true: "#4EBAAA" }}
           thumbColor={isGoodCoffeeEnabled ? "#F0B23F" : "#f4f3f4"}

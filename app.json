@@ -23,7 +23,9 @@
       "buildNumber": "4",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["maps"],
+        "LSApplicationQueriesSchemes": [
+          "maps"
+        ],
         "NSLocationWhenInUseUsageDescription": "Allow access to your location to find the closest coffee shop and provide accurate directions.",
         "NSLocationAlwaysUsageDescription": "Allow access to your location to find the closest coffee shop and provide accurate directions."
       },
@@ -50,11 +52,9 @@
         "projectId": "1e421fe7-060a-484a-89e5-bcf749dd8355"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "updates": {
       "url": "https://u.expo.dev/1e421fe7-060a-484a-89e5-bcf749dd8355"
-    }
+    },
+    "runtimeVersion": "1.0.0"
   }
 }

@@ -1,7 +1,7 @@
 // CoffeeShopsContext.js
 
 import React, { createContext, useState, useEffect } from "react";
-
+import data from "./coffeeshops.json";
 const CoffeeShopsContext = createContext();
 
 export const CoffeeShopsProvider = ({ children }) => {
@@ -11,10 +11,6 @@ export const CoffeeShopsProvider = ({ children }) => {
   useEffect(() => {
     const fetchCoffeeShops = async () => {
       try {
-        const response = await fetch(
-          "https://api.mplscoffee.com/odata/CoffeeShops?$expand=hours"
-        );
-        const data = await response.json();
         setCoffeeShops(data.value);
       } catch (error) {
         console.error("Error fetching coffee shops:", error);

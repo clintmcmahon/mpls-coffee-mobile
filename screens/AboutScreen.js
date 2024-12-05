@@ -31,24 +31,21 @@ const AboutScreen = () => {
           • Interactive map of coffee shops in Minneapolis{"\n"}• Detailed
           information on each coffee shop{"\n"}• User ratings and reviews{"\n"}•
           Open hours and contact details{"\n"}• Directions to your chosen coffee
-          destination{"\n"}• "Good Coffee" filter for discerning tastes{"\n"}•
-          Real-time list of currently open coffee shops
+          destination{"\n"}• "Specialty Coffee" filter for discerning tastes
+          {"\n"}• Real-time list of currently open coffee shops
         </Text>
 
-        <Text style={styles.sectionTitle}>Good Coffee Filter</Text>
+        <Text style={styles.sectionTitle}>Specialty Coffee Filter</Text>
         <Text style={styles.text}>
-          We have a "Good Coffee" filter that helps you find shops that truly
-          care about making coffee that's good. This feature highlights
-          establishments known for their high-quality beans, expert baristas,
-          and commitment to the art of coffee-making. Say goodbye to mediocre
-          brews and hello to exceptional coffee experiences! Turn it off if you
-          just need some caffeine.
+          The "Specialty Coffee" filter highlights establishments known for
+          their high-quality beans, expert baristas, and commitment to the art
+          of coffee-making. Turn it off if you just need some caffeine.
         </Text>
 
         <Text style={styles.sectionTitle}>Open Now Feature</Text>
         <Text style={styles.text}>
-          Need coffee right away? Our "Open Now" list shows you all the coffee
-          shops currently serving in real-time. No more disappointment from
+          Need coffee right away? The "Open Now" filter shows you all the coffee
+          shops currently serving right now. No more disappointment from
           arriving at a closed shop – we've got you covered with up-to-date
           information on operating hours.
         </Text>
@@ -56,9 +53,9 @@ const AboutScreen = () => {
         <Text style={styles.sectionTitle}>Our Mission</Text>
         <Text style={styles.text}>
           We're passionate about connecting coffee lovers with local businesses
-          and helping you discover new favorite spots in Minneapolis. Whether
-          you're a resident or just visiting, MPLS Coffee is your trusted
-          companion for all things coffee in the city.
+          and helping you discover new favorite spots in and around the Twin
+          Cities. Whether you're a resident or just visiting, MPLS Coffee is
+          your trusted companion for all things coffee in the cities.
         </Text>
 
         <Text style={styles.sectionTitle}>Contact Us</Text>
