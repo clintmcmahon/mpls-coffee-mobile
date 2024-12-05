@@ -251,6 +251,7 @@ const MainScreen = ({ navigation }) => {
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
         minZoom={5}
         maxZoom={10}
+        minPoints={4}
         clusterColor="#1E3237"
       >
         {filteredShops.map((shop) => (
