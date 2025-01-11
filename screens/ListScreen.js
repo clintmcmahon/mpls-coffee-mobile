@@ -220,7 +220,7 @@ const ListScreen = () => {
         />
       </BlurView>
       <BlurView intensity={80} tint="dark" style={styles.filterContainer}>
-        <Text style={styles.filterText}>Specialty Coffee</Text>
+        <Text style={styles.filterText}>Good Coffee</Text>
         <Switch
           trackColor={{ false: "#767577", true: "#4EBAAA" }}
           thumbColor={isGoodCoffeeEnabled ? "#F0B23F" : "#f4f3f4"}

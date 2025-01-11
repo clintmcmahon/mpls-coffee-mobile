@@ -31,15 +31,15 @@ const AboutScreen = () => {
           • Interactive map of coffee shops in Minneapolis{"\n"}• Detailed
           information on each coffee shop{"\n"}• User ratings and reviews{"\n"}•
           Open hours and contact details{"\n"}• Directions to your chosen coffee
-          destination{"\n"}• "Specialty Coffee" filter for discerning tastes
+          destination{"\n"}• "Good Coffee" filter for discerning tastes
           {"\n"}• Real-time list of currently open coffee shops
         </Text>
 
-        <Text style={styles.sectionTitle}>Specialty Coffee Filter</Text>
+        <Text style={styles.sectionTitle}>Good Coffee Filter</Text>
         <Text style={styles.text}>
-          The "Specialty Coffee" filter highlights establishments known for
-          their high-quality beans, expert baristas, and commitment to the art
-          of coffee-making. Turn it off if you just need some caffeine.
+          The "Good Coffee" filter highlights establishments known for their
+          high-quality beans, expert baristas, and commitment to the art of
+          coffee-making. Turn it off if you just need some caffeine.
         </Text>
 
         <Text style={styles.sectionTitle}>Open Now Feature</Text>

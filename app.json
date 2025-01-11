@@ -2,15 +2,17 @@
   "expo": {
     "name": "MPLS Coffee",
     "slug": "MPLSCoffee",
-    "version": "1.0.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#1e3237"
     },
+    "runtimeVersion": "1.2.0",
     "plugins": [
       [
         "expo-location",
@@ -23,9 +25,7 @@
       "buildNumber": "4",
       "supportsTablet": true,
       "infoPlist": {
-        "LSApplicationQueriesSchemes": [
-          "maps"
-        ],
+        "LSApplicationQueriesSchemes": ["maps"],
         "NSLocationWhenInUseUsageDescription": "Allow access to your location to find the closest coffee shop and provide accurate directions.",
         "NSLocationAlwaysUsageDescription": "Allow access to your location to find the closest coffee shop and provide accurate directions."
       },
@@ -54,7 +54,6 @@
     },
     "updates": {
       "url": "https://u.expo.dev/1e421fe7-060a-484a-89e5-bcf749dd8355"
-    },
-    "runtimeVersion": "1.0.0"
+    }
   }
 }

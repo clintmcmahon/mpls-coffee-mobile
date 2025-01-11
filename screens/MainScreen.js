@@ -13,7 +13,7 @@ import {
   Animated,
   Image,
 } from "react-native";
-import { Marker, PROVIDER_DEFAULT } from "react-native-maps";
+import MapView, { Marker, PROVIDER_DEFAULT } from "react-native-maps";
 import { Feather } from "@expo/vector-icons";
 import FontAwesome from "@expo/vector-icons/FontAwesome";
 import { BlurView } from "expo-blur";
@@ -23,7 +23,7 @@ import CoffeeShopsContext from "../context/CoffeeShopsContext";
 import * as utils from "../utils/functions";
 import ShopHours from "../components/ShopHours";
 import AISummary from "../components/AISummary";
-import MapView from "react-native-map-clustering";
+//import MapView from "react-native-map-clustering";
 const { width, height } = Dimensions.get("window");
 
 const MINNEAPOLIS_REGION = {
@@ -39,7 +39,7 @@ const MainScreen = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [filteredShops, setFilteredShops] = useState([]);
   const [isOpenNowEnabled, setIsOpenNowEnabled] = useState(true);
-  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(false);
+  const [isGoodCoffeeEnabled, setIsGoodCoffeeEnabled] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
   const [locationPermission, setLocationPermission] = useState("unknown");
 
@@ -132,44 +132,45 @@ const MainScreen = ({ navigation }) => {
   };
 
   const filterOpenShops = () => {
-    if (coffeeShops) {
-      if (!isOpenNowEnabled && !isGoodCoffeeEnabled) {
-        setFilteredShops(coffeeShops);
-        return;
-      }
-
-      const now = new Date();
-      const currentDay = now.getDay();
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
-      let openShops = coffeeShops;
-
-      if (isOpenNowEnabled) {
-        openShops = coffeeShops.filter((shop) => {
-          const todayHours = shop.hours.find((h) => h.dayOfWeek === currentDay);
-          if (!todayHours) return false;
-          const openMinutes = utils.parseISODuration(todayHours.openTime);
-          const closeMinutes = utils.parseISODuration(todayHours.closeTime);
-
-          // Handle cases where closing time is on the next day
-          if (closeMinutes < openMinutes) {
-            return (
-              currentMinutes >= openMinutes || currentMinutes <= closeMinutes
-            );
-          }
-
-          return (
-            currentMinutes >= openMinutes && currentMinutes <= closeMinutes
-          );
-        });
-      }
-
-      if (isGoodCoffeeEnabled) {
-        openShops = openShops.filter((shop) => shop.isGood);
-      }
-
-      setFilteredShops(openShops);
+    if (!coffeeShops || !Array.isArray(coffeeShops)) {
+      console.warn("Invalid coffeeShops data:", coffeeShops);
+      setFilteredShops([]);
+      return;
     }
+
+    let openShops = coffeeShops;
+
+    if (isOpenNowEnabled) {
+      openShops = openShops.filter((shop) => {
+        const todayHours = shop.hours?.find(
+          (h) => h.dayOfWeek === new Date().getDay()
+        );
+        if (!todayHours) return false;
+
+        const openMinutes = utils.parseISODuration(todayHours.openTime);
+        const closeMinutes = utils.parseISODuration(todayHours.closeTime);
+        const currentMinutes =
+          new Date().getHours() * 60 + new Date().getMinutes();
+
+        if (closeMinutes < openMinutes) {
+          return (
+            currentMinutes >= openMinutes || currentMinutes <= closeMinutes
+          );
+        }
+
+        return currentMinutes >= openMinutes && currentMinutes <= closeMinutes;
+      });
+    }
+
+    if (isGoodCoffeeEnabled) {
+      openShops = openShops.filter((shop) => shop.isGood);
+    }
+
+    const validShops = openShops.filter(
+      (shop) => shop.latitude && shop.longitude && shop.name
+    );
+
+    setFilteredShops(validShops);
   };
 
   const handleMarkerPress = (shop) => {
@@ -254,26 +255,38 @@ const MainScreen = ({ navigation }) => {
         minPoints={4}
         clusterColor="#1E3237"
       >
-        {filteredShops.map((shop) => (
-          <Marker
-            key={shop.placeId}
-            coordinate={{ latitude: shop.latitude, longitude: shop.longitude }}
-            onPress={() => handleMarkerPress(shop)}
-          >
-            <View style={styles.markerContainer}>
-              <View style={styles.iconContainer}>
-                <FontAwesome name="coffee" size={18} color="#FFFFFF" />
-              </View>
-              <Text
-                style={styles.shopLabel}
-                numberOfLines={2} // Limit to one line
-                ellipsizeMode="tail" // Show ellipsis for overflow
-              >
-                {shop.name}
-              </Text>
-            </View>
-          </Marker>
-        ))}
+        {filteredShops.length > 0 &&
+          filteredShops.map((shop) => {
+            if (shop && shop.latitude && shop.longitude && shop.name) {
+              return (
+                <Marker
+                  key={shop.placeId}
+                  coordinate={{
+                    latitude: shop.latitude,
+                    longitude: shop.longitude,
+                  }}
+                  onPress={() => handleMarkerPress(shop)}
+                >
+                  <View style={styles.markerContainer}>
+                    <View style={styles.iconContainer}>
+                      <FontAwesome name="coffee" size={18} color="#FFFFFF" />
+                    </View>
+                    <Text
+                      style={styles.shopLabel}
+                      numberOfLines={2}
+                      ellipsizeMode="tail"
+                    >
+                      {shop.name}
+                    </Text>
+                  </View>
+                </Marker>
+              );
+            } else {
+              console.warn("Skipping invalid shop:", shop);
+              return null;
+            }
+          })}
+
         {renderUserLocationMarker()}
       </MapView>
       <View style={styles.filterContainer}>
@@ -288,7 +301,7 @@ const MainScreen = ({ navigation }) => {
           />
         </BlurView>
         <BlurView intensity={80} tint="dark" style={styles.isGoodContainer}>
-          <Text style={styles.filterText}>Specialty Coffee</Text>
+          <Text style={styles.filterText}>Good Coffee</Text>
           <Switch
             trackColor={{ false: "#767577", true: "#4EBAAA" }}
             thumbColor={isGoodCoffeeEnabled ? "#F0B23F" : "#f4f3f4"}
